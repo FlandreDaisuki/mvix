@@ -32,9 +32,8 @@ await server.register(import('@fastify/static'), {
 server.post('/mvix/save', async(req, reply) => {
   if (req.body){
     await fs.writeFile(SAVE_DATA_PATH, req.body, 'utf8');
-    return reply.status(200);
   }
-  reply.status(204);
+  return reply.send();
 });
 
 server.post('/mvix/load', async(req, reply) => {
