@@ -1,28 +1,30 @@
 import fs from 'fs/promises';
 import path from 'path';
 
-export const isExistingFile = async(pathLike) => {
+export const isExistingFile = async (pathLike) => {
   try {
     return (await fs.lstat(pathLike)).isFile();
-  } catch {
+  }
+  catch {
     return false;
   }
 };
 
-export const isExistingDir = async(pathLike) => {
+export const isExistingDir = async (pathLike) => {
   try {
     return (await fs.lstat(pathLike)).isDirectory();
-  } catch {
+  }
+  catch {
     return false;
   }
 };
 
-export const isExisting = async(pathLike) => Promise.all([
+export const isExisting = async (pathLike) => Promise.all([
   isExistingFile(pathLike),
   isExistingDir(pathLike),
 ]).then((boolList) => boolList.some(Boolean));
 
-export const findPathCaseInsensitively = async(targetPath) => {
+export const findPathCaseInsensitively = async (targetPath) => {
   const np = path.resolve(decodeURIComponent(targetPath));
   const { dir, root } = path.parse(np);
 
@@ -45,7 +47,7 @@ export const findPathCaseInsensitively = async(targetPath) => {
 
 /** @param {string} targetPath */
 export const findFileCaseInsensitively = ((PATH_CACHE) => {
-  return async(targetPath) => {
+  return async (targetPath) => {
     if (PATH_CACHE.has(targetPath)) { return PATH_CACHE.get(targetPath); }
 
     const foundPath = await findPathCaseInsensitively(targetPath);

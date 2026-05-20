@@ -1,4 +1,0 @@
-{
-  "extends": ["@flandredaisuki"],
-  "ignorePatterns": ["patches"]
-}

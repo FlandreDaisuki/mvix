@@ -10,19 +10,19 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           fetch-depth: 0
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v6
         with:
-          node-version: 22
+          node-version: 26
 
-      - uses: pnpm/action-setup@v4
+      - uses: pnpm/action-setup@v6
         name: Setup pnpm
         id: setup-pnpm
         with:
-          version: 9
+          version: 11
           run_install: false
 
       - name: Get pnpm store directory
@@ -31,7 +31,7 @@ jobs:
         run: |
           echo "STORE_PATH=$(pnpm store path --silent)" >> "$GITHUB_OUTPUT"
 
-      - uses: actions/cache@v4
+      - uses: actions/cache@v5
         name: Setup pnpm cache
         with:
           path: ${{ steps.pnpm-store-path.outputs.STORE_PATH }}
@@ -53,21 +53,25 @@ jobs:
     name: 📦 Deploy to npm
     runs-on: ubuntu-latest
     needs: check-version
+    permissions:
+      contents: read
+      id-token: write
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           fetch-depth: 0
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v6
         with:
-          node-version: 22
+          node-version: 26
+          registry-url: "https://registry.npmjs.org"
 
-      - uses: pnpm/action-setup@v4
+      - uses: pnpm/action-setup@v6
         name: Setup pnpm
         id: setup-pnpm
         with:
-          version: 9
+          version: 11
           run_install: false
 
       - name: Get pnpm store directory
@@ -76,7 +80,7 @@ jobs:
         run: |
           echo "STORE_PATH=$(pnpm store path --silent)" >> "$GITHUB_OUTPUT"
 
-      - uses: actions/cache@v4
+      - uses: actions/cache@v5
         name: Setup pnpm cache
         with:
           path: ${{ steps.pnpm-store-path.outputs.STORE_PATH }}
@@ -88,9 +92,7 @@ jobs:
 
       - run: pnpm run test
 
-      - uses: JS-DevTools/npm-publish@v3
-        with:
-          token: ${{ secrets.NPM_AUTH_TOKEN }}
+      - run: pnpm publish --no-git-checks
 
   build-and-push-image:
     name: 🐳 Build image & deploy to ghcr.io
@@ -104,7 +106,7 @@ jobs:
       IMAGE_NAME: ${{ github.repository }}
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           fetch-depth: 0
 

@@ -31,14 +31,14 @@ await server.register(import('@fastify/static'), {
   prefix: '/static/', // FIXME: workaround to FastifyError: Method 'HEAD' already declared for route '/*'
 });
 
-server.post('/mvix/save', async(req, reply) => {
-  if (req.body){
+server.post('/mvix/save', async (req, reply) => {
+  if (req.body) {
     await fs.writeFile(SAVE_DATA_PATH, req.body, 'utf8');
   }
   return reply.send();
 });
 
-server.post('/mvix/load', async(req, reply) => {
+server.post('/mvix/load', async (req, reply) => {
   if (!await isExistingFile(SAVE_DATA_PATH)) {
     return reply.send('null');
   }
@@ -47,7 +47,7 @@ server.post('/mvix/load', async(req, reply) => {
   return reply.send(data);
 });
 
-server.get('/*', async(req, reply) => {
+server.get('/*', async (req, reply) => {
   const found = await findFileCaseInsensitively(path.join(PWD, req.url));
   if (found) {
     const { dir, base } = path.parse(found);
@@ -57,7 +57,7 @@ server.get('/*', async(req, reply) => {
       const hash = createHash('sha256').update(fileContent).digest('hex').slice(0, 8);
       const correspondingFilePath = path.join(PATCHES_DIR, `main.${hash}.patch.js`);
 
-      if (await isExistingFile(correspondingFilePath)){
+      if (await isExistingFile(correspondingFilePath)) {
         return reply.sendFile(`main.${hash}.patch.js`, PATCHES_DIR);
       }
     }
@@ -79,8 +79,8 @@ try {
 
   console.log(`Listening on ${url}`);
   open(url);
-
-} catch (err) {
+}
+catch (err) {
   server.log.error(err);
   process.exit(1);
 }

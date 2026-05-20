@@ -1,4 +1,4 @@
-FROM node:alpine
+FROM node:26-alpine3.23
 
 VOLUME [ "/game" ]
 
