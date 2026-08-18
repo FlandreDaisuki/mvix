@@ -1,8 +1,9 @@
 name: Release
 
 on:
-  release:
-    types: [published]
+  push:
+    tags:
+      - "v*"
 
 jobs:
   check-version:
@@ -10,15 +11,18 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        # aka actions/checkout@v7.0.1
         with:
           fetch-depth: 0
 
-      - uses: actions/setup-node@v6
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020
+        # aka actions/setup-node@v7.0.0
         with:
           node-version: 26
 
-      - uses: pnpm/action-setup@v6
+      - uses: pnpm/action-setup@0977fd99725f1db4007ccb2928dbb4e90d06cc86
+        # aka pnpm/action-setup@v6.0.10
         name: Setup pnpm
         id: setup-pnpm
         with:
@@ -31,7 +35,8 @@ jobs:
         run: |
           echo "STORE_PATH=$(pnpm store path --silent)" >> "$GITHUB_OUTPUT"
 
-      - uses: actions/cache@v5
+      - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9
+        # aka actions/cache@v6.1.0
         name: Setup pnpm cache
         with:
           path: ${{ steps.pnpm-store-path.outputs.STORE_PATH }}
@@ -39,15 +44,23 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-pnpm-store-
 
-      - id: package-json-version
+      - name: Check tag and package versions
         env:
           NPM_CONFIG_UPDATE_NOTIFIER: false
         run: |
+          TAG_VERSION="${GITHUB_REF_NAME#v}"
           PACKAGE_JSON_VERSION="$(jq -r .version package.json)"
           NPM_REMOTE_VERSION="$(npm show mvix version)"
 
-          # exit 1 if no valid versions matched
-          pnpm dlx semver -r ">${NPM_REMOTE_VERSION}" "${PACKAGE_JSON_VERSION}"
+          if [[ "${TAG_VERSION}" != "${PACKAGE_JSON_VERSION}" ]]; then
+            echo "::error::Tag ${GITHUB_REF_NAME} does not match package.json version ${PACKAGE_JSON_VERSION}"
+            exit 1
+          fi
+
+          if ! pnpm dlx semver -r ">${NPM_REMOTE_VERSION}" "${PACKAGE_JSON_VERSION}"; then
+            echo "::error::Version ${PACKAGE_JSON_VERSION} must be newer than the published npm version ${NPM_REMOTE_VERSION}"
+            exit 1
+          fi
 
   deploy-to-npm:
     name: 📦 Deploy to npm
@@ -58,16 +71,19 @@ jobs:
       id-token: write
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        # aka actions/checkout@v7.0.1
         with:
           fetch-depth: 0
 
-      - uses: actions/setup-node@v6
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020
+        # aka actions/setup-node@v7.0.0
         with:
           node-version: 26
           registry-url: "https://registry.npmjs.org"
 
-      - uses: pnpm/action-setup@v6
+      - uses: pnpm/action-setup@0977fd99725f1db4007ccb2928dbb4e90d06cc86
+        # aka pnpm/action-setup@v6.0.10
         name: Setup pnpm
         id: setup-pnpm
         with:
@@ -80,7 +96,8 @@ jobs:
         run: |
           echo "STORE_PATH=$(pnpm store path --silent)" >> "$GITHUB_OUTPUT"
 
-      - uses: actions/cache@v5
+      - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9
+        # aka actions/cache@v6.1.0
         name: Setup pnpm cache
         with:
           path: ${{ steps.pnpm-store-path.outputs.STORE_PATH }}
@@ -92,7 +109,7 @@ jobs:
 
       - run: pnpm run test
 
-      - run: pnpm publish --no-git-checks
+      - run: npm publish
 
   build-and-push-image:
     name: 🐳 Build image & deploy to ghcr.io
@@ -106,13 +123,14 @@ jobs:
       IMAGE_NAME: ${{ github.repository }}
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        # aka actions/checkout@v7.0.1
         with:
           fetch-depth: 0
 
       - name: Log in to the Container registry
-        uses: docker/login-action@9780b0c442fbb1117ed29e0efdff1e18412f7567
-        # aka docker/login-action@v3.3.0
+        uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f
+        # aka docker/login-action@v4.6.0
         with:
           registry: ${{ env.REGISTRY }}
           username: ${{ github.actor }}
@@ -120,14 +138,14 @@ jobs:
 
       - name: Extract metadata (tags, labels) for Docker
         id: meta
-        uses: docker/metadata-action@8e5442c4ef9f78752691e2d8f8d19755c6f78e81
-        # aka docker/metadata-action@v5.5.1
+        uses: docker/metadata-action@dc802804100637a589fabce1cb79ff13a1411302
+        # aka docker/metadata-action@v6.2.0
         with:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
 
       - name: Build and push Docker image
-        uses: docker/build-push-action@4f58ea79222b3b9dc2c8bbdd6debcef730109a75
-        # aka docker/build-push-action@v6.9.0
+        uses: docker/build-push-action@53b7df96c91f9c12dcc8a07bcb9ccacbed38856a
+        # aka docker/build-push-action@v7.3.0
         with:
           context: .
           push: true
